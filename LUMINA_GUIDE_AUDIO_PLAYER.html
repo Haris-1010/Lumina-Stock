@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lumina Stock — Audio Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    max-width: 680px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+
+  .logo-text h1 { font-size: 18px; font-weight: 700; color: #f1f5f9; }
+  .logo-text p  { font-size: 12px; color: #64748b; margin-top: 1px; }
+
+  /* Section display */
+  .now-reading {
+    background: #0f172a;
+    border: 1px solid #1e3a5f;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    min-height: 90px;
+  }
+
+  .now-reading-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #475569;
+    margin-bottom: 8px;
+  }
+
+  .now-reading-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #38bdf8;
+    margin-bottom: 4px;
+  }
+
+  .now-reading-text {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.6;
+    max-height: 48px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin-bottom: 20px;
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #475569;
+    margin-bottom: 8px;
+  }
+
+  .progress-bar-bg {
+    height: 6px;
+    background: #1e3a5f;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #38bdf8);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .btn {
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s ease;
+  }
+
+  .btn:hover { transform: scale(1.07); }
+  .btn:active { transform: scale(0.95); }
+
+  .btn-play {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    font-size: 26px;
+    box-shadow: 0 8px 24px rgba(16,185,129,0.35);
+  }
+
+  .btn-play:hover { box-shadow: 0 10px 30px rgba(16,185,129,0.5); }
+
+  .btn-sec {
+    width: 46px; height: 46px;
+    background: #334155;
+    color: #94a3b8;
+    font-size: 18px;
+  }
+
+  .btn-sec:hover { background: #475569; color: #e2e8f0; }
+  .btn-sec:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  /* Speed & voice controls */
+  .settings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .setting-group label {
+    display: block;
+    font-size: 11px;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 6px;
+  }
+
+  .setting-group select,
+  .setting-group input[type=range] {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .setting-group select:focus { border-color: #10b981; }
+
+  .speed-display {
+    font-size: 11px;
+    color: #64748b;
+    text-align: right;
+    margin-top: 4px;
+  }
+
+  /* Chapter list */
+  .chapters-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #475569;
+    margin-bottom: 10px;
+  }
+
+  .chapters {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+  }
+
+  .chapters::-webkit-scrollbar { width: 4px; }
+  .chapters::-webkit-scrollbar-track { background: transparent; }
+  .chapters::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+  .chapter-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background .1s;
+    border-bottom: 1px solid #1a2740;
+  }
+
+  .chapter-item:last-child { border-bottom: none; }
+  .chapter-item:hover { background: #243352; }
+
+  .chapter-item.active {
+    background: #1e3a5f;
+    border-left: 3px solid #10b981;
+  }
+
+  .chapter-num {
+    font-size: 11px;
+    color: #475569;
+    min-width: 22px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chapter-name {
+    font-size: 13px;
+    color: #94a3b8;
+    flex: 1;
+  }
+
+  .chapter-item.active .chapter-name { color: #e2e8f0; font-weight: 600; }
+
+  .chapter-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: transparent;
+  }
+  .chapter-item.active .chapter-dot { background: #10b981; }
+
+  /* Status badge */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    margin-bottom: 20px;
+    transition: all .2s;
+  }
+
+  .status-idle    { background: #1e293b; color: #475569; border: 1px solid #334155; }
+  .status-playing { background: #052e16; color: #10b981; border: 1px solid #10b981; }
+  .status-paused  { background: #1c1917; color: #f59e0b; border: 1px solid #f59e0b; }
+
+  .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor;
+    animation: pulse 1.2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.4; transform: scale(0.7); }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">📦</div>
+    <div class="logo-text">
+      <h1>Lumina Stock</h1>
+      <p>Complete User Guide — Audio Version</p>
+    </div>
+  </div>
+
+  <div id="statusBadge" class="status-badge status-idle">
+    <span class="pulse"></span>
+    <span id="statusText">Ready to play</span>
+  </div>
+
+  <div class="now-reading">
+    <div class="now-reading-label">Now reading</div>
+    <div class="now-reading-title" id="sectionTitle">—</div>
+    <div class="now-reading-text" id="sectionText">Press play to start the guide.</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-info">
+      <span id="progressLabel">Section 0 of 0</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-sec" id="btnPrev" onclick="prevSection()" title="Previous section">⏮</button>
+    <button class="btn btn-play" id="btnPlay" onclick="togglePlay()" title="Play / Pause">▶</button>
+    <button class="btn btn-sec" id="btnNext" onclick="nextSection()" title="Next section">⏭</button>
+    <button class="btn btn-sec" onclick="stopAll()" title="Stop">⏹</button>
+  </div>
+
+  <div class="settings">
+    <div class="setting-group">
+      <label>Reading speed</label>
+      <input type="range" id="speedSlider" min="0.6" max="1.8" step="0.1" value="1.0"
+             oninput="updateSpeed(this.value)" />
+      <div class="speed-display" id="speedLabel">1.0×</div>
+    </div>
+    <div class="setting-group">
+      <label>Voice</label>
+      <select id="voiceSelect" onchange="updateVoice()">
+        <option value="">Default voice</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="chapters-label">Chapters — click to jump</div>
+  <div class="chapters" id="chapterList"></div>
+</div>
+
+<script>
+// ─── Raw guide content split into chapters ───────────────────────────────────
+const CHAPTERS = [
+  {
+    title: "Introduction — What is Lumina Stock?",
+    text: `Lumina Stock is an AI-powered inventory management system built for businesses of all sizes — from a single retail shop to a wholesale distributor managing hundreds of B2B customers. It combines real-time inventory tracking so you always know exactly what you have in stock, a point-of-sale cashier so you can sell directly to walk-in customers, wholesale order management for bulk B2B orders with approval workflows, AI forecasting to predict what will run out before it happens, financial tools including invoices, purchase orders, and payment tracking, and full multi-language support in both Urdu and English. It is built for retail shops, wholesale distributors, hybrid businesses, pharmacies, grocery stores, and clothing or electronics stores.`
+  },
+  {
+    title: "Getting Started — Sign Up & Business Type",
+    text: `When you create an account you go through 3 steps. Step 1: Choose a plan. The Starter plan is free and suits solo operators. The Pro plan costs 29 dollars per month and is for growing businesses needing AI and analytics. The Enterprise plan costs 99 dollars per month for large operations needing audit logs and platform control. Start on Free to learn the system. Upgrade when you need AI forecasting, purchase orders, or more than 100 products. Step 2: Choose your business type. If you choose Retail, you sell directly to end customers and get the POS cashier, sales history, and retail analytics. If you choose Wholesale, you sell in bulk to other businesses and get wholesale order management, price groups, credit limits, and B2B dashboards. If you choose Both, a mode switcher appears in the sidebar footer so you can tap it to switch between Retail and Wholesale views instantly. For example, Ahmed runs a clothing store that also sells bulk to smaller shops. He chooses Both, so on weekday mornings he switches to Wholesale to process B2B orders, and in the evening he switches back to Retail for walk-in customers. Step 3: Fill in your name, email, password, and business name. Your subdomain is auto-generated from your business name and you can customize it.`
+  },
+  {
+    title: "Dashboard",
+    text: `The Dashboard is your mission control — a live snapshot of your business health loaded the moment you log in. You see revenue for this week and month, units sold, low stock alerts for products falling below their reorder point, recent sales, top selling products, and total stock value. For example, Sara opens Lumina Stock every morning before her pharmacy opens. The Dashboard immediately shows her 3 products are low on stock highlighted in amber, yesterday's revenue was 45,000 Pakistani Rupees, and Panadol Extra is her top seller this week. In under 30 seconds she knows exactly what needs attention before the shop opens. The Wholesale Dashboard is a separate page in the sidebar showing B2B-specific metrics including pending approvals, outstanding balances, and top wholesale customers. Dashboard cards are live — refresh the page to get the latest numbers. Click any low-stock alert to jump directly to that product.`
+  },
+  {
+    title: "Inventory",
+    text: `Inventory is your product master list — every item you stock lives here. You create, edit, search, and organize products from this page. Key fields include SKU which is a unique product code, Category to group products, Cost Price which is what you paid the supplier, Selling Price which is what you charge retail customers, Wholesale Price which is what you charge wholesale customers, Current Stock which is units currently in stock, Reorder Point which is the alert threshold when you get notified that stock is running low, Lead Time in days which is how long it takes your supplier to restock, Minimum Order Quantity for wholesale customers, and Expiry Date for perishable goods. For example, Bilal adds a product called Samsung Galaxy A35 with a cost of 45,000 rupees and a selling price of 55,000 rupees and a reorder point of 5. When stock drops to 5 units he automatically gets an alert to reorder. A wholesale distributor can add Paracetamol 500mg with a wholesale price of 800 rupees per box and minimum order quantity of 10 boxes. When a pharmacy orders via Wholesale Orders they see this price automatically. For large catalogs you can download a CSV template, fill it in Excel, and upload all 500 products at once. Use the filter by category to quickly find products. Soft delete means deleting a product moves it to the Recycle Bin without erasing its sales history. Products marked as public appear on your Storefront online shop. Set accurate Lead Time values because the AI Forecast uses them to predict when to order.`
+  },
+  {
+    title: "Cashier — Point of Sale",
+    text: `The Cashier is your walk-in sales screen. Add items to a cart, apply discounts, take payment, and print a receipt. It works completely offline — if internet drops during a sale, the transaction is saved locally and synced when back online. To complete a sale: first search for a product by typing the name or SKU. Click the plus button to add it to the cart. Adjust the quantity. Set the sale unit choosing between UNIT, DOZEN which multiplies the price by 12, or KG for fractional weight. Apply a discount by entering a percentage in the discount column. Select a customer from your list or leave as Walk-in. Enter the cash received and the change is calculated automatically. Click Complete Sale and Print Receipt — stock is deducted and the sale is recorded. For example, a customer walks in and buys 2 bottles of shampoo and 1 soap. Zara searches for shampoo, adds 2, searches for soap, adds 1, enters 500 rupees cash, and clicks Complete. The receipt prints with the shop logo and the customer's change of 200 rupees. Regular customer Hassan comes in. Zara selects his name from the customer dropdown so the sale is linked to his record, adds his items, then types 15 in the discount field on his favourite product. The receipt shows the original price, discount amount, and final price. If the internet goes down mid-day, Lumina Stock keeps working and sales are saved locally. When connectivity returns all offline sales sync automatically. You can also tap the camera icon to scan a product image and the AI identifies it and adds it to the cart automatically.`
+  },
+  {
+    title: "Sales History",
+    text: `Sales History is a complete log of every sale ever made — searchable and filterable by date, customer, or product. At closing time, the owner filters by Today and checks that total sales match the cash in the register. If a customer claims they were overcharged the manager searches by customer name, finds the transaction, and reprints the original receipt. To see how many units of a product were sold last month, filter by product name and date range. You can export sales data to CSV for accounting software. Sales are soft-deleted and moved to Recycle Bin so you can recover accidentally deleted sales. Sales linked to wholesale customers are separate from wholesale orders — retail cashier sales stay in Sales History even if the customer is a wholesale account.`
+  },
+  {
+    title: "Customers",
+    text: `The Customers page is a database of all your customers — both retail and wholesale. Track who buys from you, how much they owe, their contact info, and their purchase history. Key fields include Name for the contact person, Company Name for wholesale customers like Al-Noor Pharmacy, Email and Phone for contact details, Credit Limit which is the maximum amount they can owe you, Payment Terms like Net 30 or Net 60, Price Group for wholesale discount tiers, Customer Type which is either RETAIL or WHOLESALE, and Tax Number for formal B2B invoicing. For retail loyalty tracking, Ayesha visits the store regularly. Her record shows she has spent 120,000 rupees this year. The cashier sees this and offers her a loyalty discount. For wholesale B2B customers, City Medical Store orders medicines every 2 weeks. Their record shows a credit limit of 500,000 rupees, Gold price group with 15 percent off, and outstanding balance of 230,000 rupees from orders delivered but not yet paid. Before processing a new order the sales manager checks the outstanding balance against the credit limit. Filter by Customer Type equals WHOLESALE to see only B2B accounts. Customers with a Price Group automatically get that discount when a wholesale order is created for them.`
+  },
+  {
+    title: "Suppliers",
+    text: `The Suppliers page tracks the businesses you buy from. Link suppliers to products and purchase orders so you always know your supply chain. Supplier fields include Name, Contact and Email for who to call when you need to reorder, and Performance Rating from 0 to 5 stars as your subjective score of their reliability. When stock of Panadol Extra drops below the reorder point, the system shows the linked supplier Pharma Distributors Ltd. The manager calls the contact number directly and creates a Purchase Order. You can compare suppliers by updating performance ratings after each delivery. Over time ratings guide future purchasing decisions. Before calling a supplier, filter Inventory by that supplier to see their full product list and current stock levels so you can place a comprehensive order instead of multiple small ones.`
+  },
+  {
+    title: "Purchase Orders",
+    text: `Purchase Orders are formal orders you send to your suppliers to restock inventory. They create a paper trail, track delivery status, and automatically update stock when received. The workflow goes from DRAFT to SENT to PARTIALLY RECEIVED to RECEIVED or CANCELLED. For example, the AI Forecast flags that Samsung Chargers will run out in 8 days. The manager creates a PO for 50 units to Tech Imports Ltd at 800 rupees each totaling 40,000 rupees. When the shipment arrives 5 days later they mark it RECEIVED and the 50 units are added to inventory automatically. If an order for 100 units arrives with only 60 units, the manager marks the PO as PARTIALLY RECEIVED entering 60 as received quantity. The remaining 40 are tracked as outstanding. At month end the owner views all received POs to calculate total inventory cost for COGS in accounting. POs are linked to Invoices — after receiving a PO generate an invoice to pay the supplier formally. Set Lead Time accurately on products because the AI uses it to tell you when to order.`
+  },
+  {
+    title: "Invoices",
+    text: `Invoices are formal billing documents sent to customers as sales invoices or received from suppliers as purchase invoices. They track how much is owed and what has been paid. Invoice statuses are DRAFT when created but not sent, ISSUED when sent to the customer or supplier, PARTIALLY PAID when some payment is received, PAID when fully settled, OVERDUE when past due date with unpaid balance, and CANCELLED when voided. At end of month the wholesale manager creates invoices for all DELIVERED wholesale orders. Each invoice is emailed to the respective pharmacy or clinic with Net 30 payment terms. After receiving a PO from Pharma Distributors a Purchase Invoice is created for 150,000 rupees. When payment is made the accounts team marks it PAID and records the transaction method as bank transfer. If a customer says they already paid the manager opens their invoice and checks the payment log which shows partial payment details including date and team member who recorded it. Invoices are linked to Account Transactions for full financial audit trails. You can accept payments by Cash, Bank Transfer, JazzCash, EasyPaisa, or Stripe.`
+  },
+  {
+    title: "Returns",
+    text: `The Returns page lets you process product returns from customers — reverse a sale, restock inventory, and optionally issue a refund. A customer returns a defective phone charger bought 3 days ago. The cashier finds the original sale in Returns, selects the charger, marks reason as Defective, and processes the return. The charger is restocked and a refund receipt is generated. A wholesale customer received the wrong variant of a product. The sales manager processes the return for that order line. Stock is updated and the invoice balance is adjusted. Returns automatically add stock back to inventory. Returns are linked to the original sale for accurate financial reporting. Returns don't appear in Sales History as a new sale — they reduce the original sale's contribution to revenue reports.`
+  },
+  {
+    title: "Stock Adjustments",
+    text: `Stock Adjustments let you manually correct stock levels — useful for stocktakes, damages, theft, or errors discovered during physical counts. Use Add when a physical count shows more than the system has, such as finding surplus in a back room. Use Subtract when a physical count shows less than the system, such as loss, theft, or damage. For a monthly stocktake at a grocery store, the manager counts all physical stock over a weekend. On Monday they open Adjustments and compare system quantities versus physical counts. For example, Milk shows 45 in the system but only 43 physically, so they subtract 2 with the note expired and discarded. Biscuits show 100 in the system but 108 physically, so they add 8 with the note found in storage room. All adjustments are logged with timestamp and reason for audit trails. Every adjustment creates an Inventory Log entry so you can always trace who changed what and when. Run a stocktake quarterly or monthly for high-value items.`
+  },
+  {
+    title: "Analytics",
+    text: `Analytics visualises your business performance through charts, tables, and key performance indicators. It answers questions like which products are most profitable, which day do I sell most, and how is this month versus last month. Key reports include revenue over time as daily weekly or monthly trend, top products by revenue showing what earns the most, top products by units sold showing what moves fastest, sales by category showing which category drives your business, customer spending showing your highest-value customers, and inventory value trend showing your stock investment over time. A clothing store owner views the monthly revenue chart and spots that sales spike every March during Eid season and drop in July. He uses this to plan extra stock purchases in February. Analytics shows a particular face wash has the lowest revenue per unit in the cosmetics category. The owner decides to discontinue it and replace it with a higher-margin product. A wholesale business filters sales by cashier name to see which team member closed the most sales last month for performance bonuses. Combine Analytics with Forecasts — Analytics tells you what happened and Forecasts tells you what will happen.`
+  },
+  {
+    title: "Forecasts — AI Powered",
+    text: `The Forecasts page uses AI to predict future stock needs based on your actual sales history. It tells you at the current rate this product will run out in a certain number of days and you should order a specific quantity by a specific date. How it works: the AI analyses your sales velocity in units sold per day or week for each product. It factors in your set Lead Time which is how many days until stock arrives after ordering. It generates a reorder now list with recommended quantities and order-by dates. For example, Forecasts shows Augmentin 625mg will run out in 6 days. Lead time from supplier is 4 days. System flags: order today because you have only a 2-day buffer. The pharmacist creates a PO immediately. In October the AI notices unusually high sales velocity for Flu Medicine — 3 times higher than the 90-day average. It flags this as a potential seasonal spike and recommends ordering twice the usual quantity. Forecasts can also show a product has enough stock for 180 days based on current sales rate, prompting the owner to stop reordering that item and consider a clearance sale to free up cash. Higher accuracy comes from more sales history — the longer you use the system the better the forecasts get. Forecasts are available on Pro and Enterprise plans.`
+  },
+  {
+    title: "Dead Stock",
+    text: `Dead Stock identifies products that have not sold in a long time — tying up cash and warehouse space. The AI categorises them by severity. Critical means no sales in 180 or more days and suggests urgent clearance or write-off. Warning means no sales in 90 to 180 days and suggests discount campaigns or supplier returns. Watch means no sales in 30 to 90 days and suggests monitoring or small promotions. At year-end the Dead Stock page shows 380,000 rupees worth of products haven't sold in over 90 days. The manager runs an End of Season Sale discounting dead stock by 40 percent. This recovers 200,000 rupees in cash and frees up shelf space. A Smart TV model has been sitting unsold for 5 months and Dead Stock flags it as Critical. Investigation reveals the model was discontinued and customers prefer a newer version. The owner negotiates a return with the supplier. Every first Monday of the month the manager checks Dead Stock Watch category. Any product that hasn't sold in 30 days gets a 10 percent shelf-edge discount before it moves to Warning. Dead stock equals frozen cash. Money sitting on a shelf unsold for 6 months is money that could have been reinvested. Use dead stock data when negotiating supplier return policies and combine with Ad Promotions to run targeted discount campaigns.`
+  },
+  {
+    title: "Expiry Tracking",
+    text: `Expiry Tracking monitors products with expiry dates — medicines, food, and cosmetics. It alerts you before they expire so you can sell, return, or discard them in time. Alert levels are Expired meaning past the expiry date, Critical meaning expires within 7 days, Warning meaning expires within 30 days, and Upcoming meaning expires within 90 days. A pharmacy uses Expiry Tracking as their daily morning checklist. Any product expiring within 7 days is pulled from shelves immediately. This prevents selling expired medicines which is both a legal and health risk. A grocery store uses expiry dates to ensure older stock is sold first. This is called First Expired First Out. A cosmetics store notices 50 units of SPF50 Sunscreen expire in 25 days with no sales in sight. They contact the supplier and return 40 units under their return policy. Set expiry dates when receiving stock via Purchase Orders to automate tracking. Create an Adjustment entry when discarding expired products to keep stock counts accurate.`
+  },
+  {
+    title: "AI Assistant",
+    text: `The AI Assistant is a conversational chatbot that knows your entire inventory, sales, and business data. Ask it anything about your business in plain language in English or Urdu and it responds with data-backed answers. You can ask inventory questions like which products are running low on stock, what is the total value of my inventory, or how many units of a specific product do I have. You can ask sales questions like what were my total sales today, which product sold the most this week, or how does this month compare to last month. You can ask business intelligence questions like which customer has spent the most in the last 3 months, what is my most profitable product category, or show me all out-of-stock products. You can ask actionable questions like which products should I reorder this week, what is my slowest moving product, or which products expire in the next 30 days. The owner opens the AI Assistant on their phone before getting out of bed and types: give me a summary of yesterday's business. The AI responds with total sales amount, number of transactions, top 3 products sold, and any stock alerts. Before a meeting with a wholesale customer the sales manager asks: show me all orders for City Medical Store in the last 6 months. The AI lists every order with dates and amounts — no manual report needed. The AI has access to your organisation's data only and it is private and secure. The floating chat bubble at the bottom right of every page gives instant access without leaving your current page. Available on Pro and Enterprise plans.`
+  },
+  {
+    title: "Wholesale Dashboard",
+    text: `The Wholesale Dashboard is your B2B business overview — a dedicated dashboard showing wholesale-specific metrics separate from your retail operations. You see total wholesale orders, pending approvals highlighted in amber when there are orders waiting for your sign-off, total B2B revenue from delivered and invoiced orders, outstanding balance showing the value of approved and processing and shipped orders not yet paid, recent orders showing the last 5 wholesale orders with status chips, and top customers showing your highest-spending wholesale accounts. For example, Imran opens the Wholesale Dashboard first thing on Monday morning. He sees 3 orders are Pending Approval in amber alert so he clicks through to review them. The outstanding balance is 2.3 million rupees which he cross-checks with Accounts. Al-Noor Pharmacy is his top customer this month. Two orders are Shipped and he expects delivery confirmation today. The dashboard gives him a complete B2B status check in under 1 minute.`
+  },
+  {
+    title: "Wholesale Orders",
+    text: `Wholesale Orders manages bulk B2B orders from creation through delivery. Each order has a formal approval workflow ensuring nothing ships without sign-off. The workflow goes: DRAFT when sales creates the order and it is not yet submitted, then PENDING APPROVAL when submitted for manager review, then APPROVED when the manager has approved and it is ready to process, then PROCESSING when the warehouse is picking and packing, then SHIPPED when dispatched to the customer, then DELIVERED when the customer has received it, then INVOICED when the invoice has been raised for payment. Orders can also be CANCELLED if rejected or abandoned. To create a wholesale order: click New Order, select the B2B customer and their price group discount is auto-applied, search and add products with wholesale prices loading automatically, adjust quantities with minimum order quantity enforced, set per-item discount percentage if needed on top of the price group discount, add notes for delivery instructions or purchase order reference number, then either Save as Draft to come back later or Submit for Approval to send to the manager. For example, Karachi General Store places a monthly order for cleaning supplies. The sales rep creates the order, selects the customer who is in the Silver price group getting 10 percent off, adds 20 products, and submits for approval. The manager reviews and approves. The warehouse packs and ships. When delivered the manager marks it DELIVERED and raises an invoice for Net-30 payment. The order form shows the customer's credit used versus credit limit — check before approving. Price group discounts are applied automatically when you select the customer — no manual calculation needed.`
+  },
+  {
+    title: "Price Groups",
+    text: `Price Groups define tiered wholesale pricing — different customer segments get different discount levels automatically. Instead of negotiating prices on every order you assign customers to a group and the discount applies everywhere. How it works: create a price group such as Gold with 15 percent off. Assign wholesale customers to this group. When creating a wholesale order for a Gold customer, 15 percent is pre-applied to every item. You can still add per-item discounts on top. Common price group structures include Standard at 5 percent off for new wholesale customers, Silver at 10 percent off for regular accounts buying for 6 or more months, Gold at 15 percent off for high-volume accounts, Platinum or VIP at 20 percent or more for top 5 to 10 accounts, and Clearance at 30 percent for specific overstock. Ali manages 85 pharmacy accounts. Instead of setting prices individually he creates 4 price groups: Standard for 40 small pharmacies, Silver for 30 mid-size pharmacies, Gold for 12 hospital pharmacies, and Platinum for 3 large hospital chains. When Central Hospital which is in the Platinum group places a wholesale order, the 25 percent discount applies automatically to every product. Ali can focus on the relationship not the math. Price groups apply to wholesale prices not retail selling prices. If a product has no wholesale price set the price group discount applies to the retail selling price. You can always override per item on individual orders for special deals.`
+  },
+  {
+    title: "Storefront",
+    text: `The Storefront is your online shop — a public-facing product catalogue where customers can browse and place orders. Products marked as public in Inventory appear here. A home goods store marks their top 30 products as public. Customers scan a QR code on receipts that leads to the storefront. They can browse stock availability and call or WhatsApp to place orders. This acts as a digital catalogue without needing a separate website. Mark products as Public in the Inventory edit screen to include them in the storefront. Upload your organisation logo and set your address and phone in Settings — these appear on the storefront header. Enable WhatsApp integration in Settings to add a WhatsApp chat button on the storefront.`
+  },
+  {
+    title: "Ad Promotions & Marketing",
+    text: `Ad Promotions lets you plan and track your advertising campaigns on Facebook, Instagram, and Google Ads — track spend versus revenue to measure return on investment. Marketing provides organic marketing tools including social media scheduling and content planning. A clothing retailer runs an Eid sale campaign. In Ad Promotions they log a 50,000 rupee Facebook Ads spend. Over the campaign period they compare that spend against the spike in sales revenue in Analytics. The result is 320,000 rupees in additional revenue which equals a 6.4 times return on ad spend. They increase the budget for next Eid.`
+  },
+  {
+    title: "Settings",
+    text: `Settings lets you configure every aspect of your organization — branding, currency, team members, permissions, billing, API keys, and integrations. In the Organisation Profile you can set the business name, logo, address, and phone which appear on receipts, invoices, and the storefront. Set your currency such as Pakistani Rupees, US Dollars, or UAE Dirhams — this is used everywhere. The theme colour changes the accent colour of the entire user interface. The WhatsApp number enables WhatsApp buttons on the storefront. For Team Members and Permissions you can invite team members with OWNER, ADMIN, or MEMBER roles. OWNER has full access including billing and platform settings. ADMIN has full operational access but no billing access. MEMBER is fully configurable and you choose exactly which pages and actions each member can access. For example a shop owner has 3 cashiers. Each is added as MEMBER with only Cashier page access. They can process sales but cannot see Analytics, change prices, or delete inventory. For custom permissions go to Settings then Team then click a member and toggle individual permissions such as whether they can see the Inventory page, delete products, process returns, or use the AI assistant. In Subscription and Billing you can view your current plan, usage stats, upgrade or downgrade your plan, and view payment history. API Keys are for developers who want to integrate Lumina Stock with other systems such as ERP or accounting software.`
+  },
+  {
+    title: "Recycle Bin",
+    text: `The Recycle Bin is a safety net for deleted records. Products, sales, customers, and suppliers that have been deleted are moved here first. You can restore them with one click or permanently delete them. A team member accidentally deletes the wrong product. The manager opens Recycle Bin, finds it, and clicks Restore. All sales history linked to that product is intact — nothing was lost. At year-end the manager reviews the Recycle Bin. Products that were discontinued 2 years ago and have no active links are permanently deleted to clean up the database. Items in Recycle Bin do not count toward your plan limits. Items are kept in Recycle Bin indefinitely until you permanently delete them. Permanently deleted records cannot be recovered, so use this with caution.`
+  },
+  {
+    title: "Real-World Use Case — Small Retail Shop",
+    text: `Profile: single owner, 1 to 2 cashiers, 50 to 500 products, walk-in customers only. Daily workflow: Open the Dashboard to check low stock alerts and yesterday's revenue. Use the Cashier throughout the day for all sales. At end of day review Sales History for the day's transactions. Weekly check Dead Stock to identify slow movers for discounting. Monthly check Forecasts for reorder recommendations and create Purchase Orders. Ask the AI Assistant: what are my top 5 selling products this month. The most valuable pages for this use case are Cashier, Dashboard, Forecasts, and Dead Stock.`
+  },
+  {
+    title: "Real-World Use Case — Wholesale Distribution Business",
+    text: `Profile: 5 to 20 staff, 200 to 2,000 products, 20 to 100 B2B customers, large order volumes. Daily workflow: Open the Wholesale Dashboard to check pending approvals and outstanding balances. Review Wholesale Orders in Pending Approval status and approve or reject them. Update order statuses as shipments go out from Processing to Shipped to Delivered. Create Invoices for Delivered orders at end of week. Weekly review B2B Customers to chase overdue payments. Monthly review Price Groups and consider moving loyal customers to better tiers. The most valuable pages are Wholesale Dashboard, Wholesale Orders, Customers, Invoices, and Price Groups.`
+  },
+  {
+    title: "Real-World Use Case — Pharmacy & Medical Supplies",
+    text: `Profile: strict expiry tracking, regulatory compliance, mix of retail walk-ins and B2B hospital accounts. Daily workflow: Check Expiry Tracking and pull any Critical items expiring within 7 days from shelves. Use the Cashier for retail customers throughout the day. Process Wholesale Orders for hospital and clinic accounts. Weekly check Forecasts because medicines run out fast and weekly ordering is critical. Monthly do Adjustments for stocktake and discard expired items. The most valuable pages are Expiry Tracking, Cashier, Forecasts, Wholesale Orders, and Purchase Orders.`
+  },
+  {
+    title: "Real-World Use Case — Electronics & High-Value Retail",
+    text: `Profile: expensive SKUs, serial number tracking, returns are common, warranty tracking matters. Daily workflow: Use the Cashier with detailed receipts including customer name for warranty purposes. Process Returns for warranty returns and restock refurbished items. Record Adjustments for damage or theft with detailed notes. Manage detailed product descriptions and supplier links in Inventory. Use formal Invoices for business clients buying in quantity. The most valuable pages are Cashier, Returns, Inventory, Invoices, and Analytics.`
+  },
+  {
+    title: "Real-World Use Case — Hybrid Retail & Wholesale Business",
+    text: `Profile: sells to walk-in customers and also wholesales to smaller retailers and businesses. Setup: during signup choose Both as Business Type. A mode switcher appears in the sidebar footer. Workflow: in the mornings use Wholesale mode to process B2B orders from last night, approve orders, update shipment statuses, and check outstanding balances. In the afternoons use Retail mode to serve walk-in customers via the Cashier and record retail sales. Inventory, Suppliers, and Purchase Orders are shared and visible in both modes so your stock is unified. Pro tip: give your wholesale team MEMBER access with only Wholesale pages enabled. Give your retail cashiers access to only the Cashier page. The owner can see everything in both modes. This setup ensures every employee sees only what they need and your two revenue streams stay neatly organised.`
+  },
+  {
+    title: "Quick Reference Summary",
+    text: `Here is a quick reference for the most common tasks. To sell to a walk-in customer go to the Cashier. To process a bulk B2B order go to Wholesale Orders and click New Order. To see how much you earned today go to the Dashboard or Sales History. To know what to reorder go to Forecasts. To find products about to expire go to Expiry Tracking. To see what is not selling go to Dead Stock. To add or edit products go to Inventory. To create a supplier invoice go to Invoices. To order stock from a supplier go to Purchase Orders. To handle a customer return go to Returns. To fix an incorrect stock count go to Adjustments. To check B2B outstanding payments go to the Wholesale Dashboard or Customers. To set wholesale pricing tiers go to Price Groups. To ask any business question go to the AI Assistant. To restore a deleted item go to the Recycle Bin. To add a team member go to Settings then Team. That concludes the complete Lumina Stock User Guide. You now have everything you need to run your business efficiently with Lumina Stock.`
+  }
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let currentSection = 0;
+let isPlaying = false;
+let utterance = null;
+let selectedVoice = null;
+let speed = 1.0;
+
+// ─── Voices ──────────────────────────────────────────────────────────────────
+function loadVoices() {
+  const voices = window.speechSynthesis.getVoices();
+  const sel = document.getElementById("voiceSelect");
+  sel.innerHTML = '<option value="">Default voice</option>';
+  const englishVoices = voices.filter(v => v.lang.startsWith("en"));
+  englishVoices.forEach((v, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = v.name + (v.default ? " ✓" : "");
+    sel.appendChild(opt);
+  });
+}
+
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function updateVoice() {
+  const sel = document.getElementById("voiceSelect");
+  const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith("en"));
+  selectedVoice = sel.value === "" ? null : voices[parseInt(sel.value)];
+}
+
+function updateSpeed(val) {
+  speed = parseFloat(val);
+  document.getElementById("speedLabel").textContent = speed.toFixed(1) + "×";
+  if (isPlaying) { stopAll(); startFromSection(currentSection); }
+}
+
+// ─── Chapter list ─────────────────────────────────────────────────────────────
+function buildChapterList() {
+  const list = document.getElementById("chapterList");
+  list.innerHTML = "";
+  CHAPTERS.forEach((ch, i) => {
+    const div = document.createElement("div");
+    div.className = "chapter-item" + (i === currentSection ? " active" : "");
+    div.id = "ch-" + i;
+    div.onclick = () => jumpTo(i);
+    div.innerHTML = `
+      <span class="chapter-num">${String(i + 1).padStart(2, "0")}</span>
+      <span class="chapter-name">${ch.title}</span>
+      <span class="chapter-dot"></span>`;
+    list.appendChild(div);
+  });
+}
+
+function updateChapterHighlight() {
+  document.querySelectorAll(".chapter-item").forEach((el, i) => {
+    el.classList.toggle("active", i === currentSection);
+  });
+  const active = document.getElementById("ch-" + currentSection);
+  if (active) active.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// ─── Playback ─────────────────────────────────────────────────────────────────
+function speak(text, onEnd) {
+  window.speechSynthesis.cancel();
+  utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = speed;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+  if (selectedVoice) utterance.voice = selectedVoice;
+  utterance.onend = onEnd;
+  utterance.onerror = (e) => { if (e.error !== "interrupted") stopAll(); };
+  window.speechSynthesis.speak(utterance);
+}
+
+function updateUI() {
+  const ch = CHAPTERS[currentSection];
+  document.getElementById("sectionTitle").textContent = ch.title;
+  document.getElementById("sectionText").textContent = ch.text.substring(0, 180) + "…";
+  const pct = Math.round(((currentSection) / CHAPTERS.length) * 100);
+  document.getElementById("progressLabel").textContent = `Section ${currentSection + 1} of ${CHAPTERS.length}`;
+  document.getElementById("progressPct").textContent = pct + "%";
+  document.getElementById("progressFill").style.width = pct + "%";
+  updateChapterHighlight();
+
+  const badge = document.getElementById("statusBadge");
+  const statusText = document.getElementById("statusText");
+  badge.className = "status-badge " + (isPlaying ? "status-playing" : "status-paused");
+  statusText.textContent = isPlaying ? "Playing" : "Paused";
+
+  document.getElementById("btnPlay").textContent = isPlaying ? "⏸" : "▶";
+  document.getElementById("btnPrev").disabled = currentSection === 0;
+  document.getElementById("btnNext").disabled = currentSection >= CHAPTERS.length - 1;
+}
+
+function startFromSection(index) {
+  currentSection = index;
+  isPlaying = true;
+  updateUI();
+  const ch = CHAPTERS[currentSection];
+  const intro = currentSection === 0 ? "" : "";
+  speak(ch.title + ". " + ch.text, () => {
+    if (isPlaying) {
+      if (currentSection < CHAPTERS.length - 1) {
+        startFromSection(currentSection + 1);
+      } else {
+        // Finished
+        isPlaying = false;
+        const badge = document.getElementById("statusBadge");
+        const statusText = document.getElementById("statusText");
+        badge.className = "status-badge status-idle";
+        statusText.textContent = "Finished";
+        document.getElementById("btnPlay").textContent = "▶";
+        const pct = 100;
+        document.getElementById("progressFill").style.width = pct + "%";
+        document.getElementById("progressPct").textContent = "100%";
+      }
+    }
+  });
+}
+
+function togglePlay() {
+  if (!isPlaying) {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+      isPlaying = true;
+      updateUI();
+    } else {
+      startFromSection(currentSection);
+    }
+  } else {
+    window.speechSynthesis.pause();
+    isPlaying = false;
+    updateUI();
+  }
+}
+
+function stopAll() {
+  window.speechSynthesis.cancel();
+  isPlaying = false;
+  const badge = document.getElementById("statusBadge");
+  const statusText = document.getElementById("statusText");
+  badge.className = "status-badge status-idle";
+  statusText.textContent = "Stopped";
+  document.getElementById("btnPlay").textContent = "▶";
+}
+
+function prevSection() {
+  if (currentSection > 0) {
+    window.speechSynthesis.cancel();
+    isPlaying = false;
+    currentSection--;
+    updateUI();
+  }
+}
+
+function nextSection() {
+  if (currentSection < CHAPTERS.length - 1) {
+    window.speechSynthesis.cancel();
+    isPlaying = false;
+    currentSection++;
+    updateUI();
+  }
+}
+
+function jumpTo(index) {
+  const wasPlaying = isPlaying;
+  window.speechSynthesis.cancel();
+  isPlaying = false;
+  currentSection = index;
+  updateUI();
+  if (wasPlaying) { startFromSection(index); }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+buildChapterList();
+updateUI();
+
+// Keep speech synthesis alive on some browsers (Chrome throttles it after 15s)
+setInterval(() => {
+  if (isPlaying && window.speechSynthesis.paused) {
+    window.speechSynthesis.resume();
+  }
+}, 10000);
+</script>
+</body>
+</html>

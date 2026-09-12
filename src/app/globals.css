@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.theme-dark, .theme-dark *));
+
+:root {
+  --background: #f4f7fb;
+  --foreground: #111827;
+
+  /* Accent colour — default: emerald. Overridden by AccentApplier at runtime. */
+  --accent-50:  236 253 245;
+  --accent-100: 209 250 229;
+  --accent-200: 167 243 208;
+  --accent-300: 110 231 183;
+  --accent-400: 52 211 153;
+  --accent-500: 16 185 129;
+  --accent-600: 5 150 105;
+  --accent-700: 4 120 87;
+  --accent-800: 6 95 70;
+  --accent-900: 6 78 59;
+  --accent-950: 2 44 34;
+}
+
+/* ─── Accent utility classes (drive sidebar + key UI) ─────────────────────── */
+.accent-icon          { color: rgb(var(--accent-600)); }
+.accent-text          { color: rgb(var(--accent-700)); }
+.accent-text-dark     { color: rgb(var(--accent-300)); }
+.accent-bg            { background-color: rgb(var(--accent-50) / 1); }
+.accent-bg-dark       { background-color: rgb(var(--accent-950) / 0.4); }
+.accent-brand-bg      { background-color: rgb(var(--accent-100) / 1); }
+.accent-brand-bg-dark { background-color: rgb(var(--accent-900) / 0.4); }
+.accent-ring          { ring-color: rgb(var(--accent-400)); }
+
+/* Body radial glow follows accent */
+body {
+  background-image: radial-gradient(
+    circle at top,
+    rgb(var(--accent-500) / 0.07),
+    transparent 42%
+  );
+}
+.theme-dark body {
+  background-image: radial-gradient(
+    circle at top,
+    rgb(var(--accent-500) / 0.11),
+    transparent 42%
+  );
+}
+
+.theme-dark {
+  --background: #090f1a;
+  --foreground: #e6e9ef;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+.theme-dark .bg-white {
+  background-color: #111827 !important;
+}
+
+.theme-dark .bg-zinc-50 {
+  background-color: #0f172a !important;
+}
+
+.theme-dark .bg-zinc-100 {
+  background-color: #1e293b !important;
+}
+
+.theme-dark .border-zinc-200 {
+  border-color: #334155 !important;
+}
+
+.theme-dark .text-zinc-900 {
+  color: #f3f4f6 !important;
+}
+
+.theme-dark .text-zinc-950 {
+  color: #f3f4f6 !important;
+}
+
+.theme-dark .text-zinc-800 {
+  color: #e5e7eb !important;
+}
+
+.theme-dark .text-zinc-700 {
+  color: #d1d5db !important;
+}
+
+.theme-dark .text-zinc-600,
+.theme-dark .text-zinc-500 {
+  color: #94a3b8 !important;
+}
+
+.theme-dark .text-zinc-400 {
+  color: #64748b !important;
+}
+
+.theme-dark .hover\:bg-zinc-50:hover {
+  background-color: #1e293b !important;
+}
+
+.theme-dark .hover\:bg-zinc-100:hover {
+  background-color: #334155 !important;
+}
+
+.theme-dark .hover\:text-zinc-900:hover {
+  color: #f3f4f6 !important;
+}
+
+html[lang="ur"] body {
+  font-family: var(--font-urdu), var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* ─── Clickable elements show a pointer cursor ─────────────────────────────────
+   Tailwind v4 Preflight no longer adds `cursor: pointer` to buttons, so every
+   clickable control showed the default arrow. Restore it for real clickables. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+a[href],
+label[for],
+summary,
+select:not(:disabled),
+.cursor-pointer {
+  cursor: pointer;
+}
+button:disabled,
+[role="button"][aria-disabled="true"],
+[disabled] {
+  cursor: not-allowed;
+}
+
+/* ─── Mobile: prevent horizontal overflow ──────────────────────────────────── */
+html, body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ─── RTL: mobile sidebar slides in from the right ─────────────────────────── */
+[dir="rtl"] .mobile-sidebar {
+  left: auto;
+  right: 0;
+}
+[dir="rtl"] .mobile-sidebar:not(.translate-x-0) {
+  transform: translateX(100%);
+}
+
+/* ─── Mobile-safe dialog / sheet max widths ────────────────────────────────── */
+@media (max-width: 640px) {
+  [data-radix-dialog-content] {
+    max-width: calc(100vw - 2rem) !important;
+    max-height: calc(100dvh - 4rem) !important;
+    overflow-y: auto;
+  }
+}

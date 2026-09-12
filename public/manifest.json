@@ -1,0 +1,42 @@
+{
+  "name": "Lumina Stock",
+  "short_name": "Lumina",
+  "description": "AI-powered inventory management — forecasts, dead stock, cashier, and more.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Cashier",
+      "url": "/cashier",
+      "description": "Open the point-of-sale screen"
+    },
+    {
+      "name": "Inventory",
+      "url": "/inventory",
+      "description": "View and manage inventory"
+    },
+    {
+      "name": "Forecasts",
+      "url": "/forecasts",
+      "description": "Check stock forecasts"
+    }
+  ],
+  "categories": ["business", "productivity"]
+}
