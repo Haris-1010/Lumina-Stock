@@ -160,6 +160,7 @@ export function CashierClient({
   const [selectedCustomer, setSelectedCustomer] = useState<CashierCustomer | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
 
   // Previous price lookup
   const [previousPrices, setPreviousPrices] = useState<Record<string, number>>({});
@@ -203,18 +204,20 @@ export function CashierClient({
     const onBlur = () => { tabHeld = false; };
     const onKey = (event: KeyboardEvent) => {
       if (event.isComposing || document.querySelector('[role="dialog"]')) return;
-      if (event.key === "Tab" && firstTab) {
-        firstTab = false;
-        if (!event.shiftKey && !event.defaultPrevented && !(document.activeElement instanceof HTMLInputElement) && !(document.activeElement instanceof HTMLTextAreaElement)) {
+      if (event.key === "Tab") {
+        if (!event.shiftKey && !(document.activeElement instanceof HTMLInputElement) && !(document.activeElement instanceof HTMLTextAreaElement)) {
           event.preventDefault();
-          customerSearchRef.current?.focus();
-          return;
+          if (customerSearchRef.current) {
+            customerSearchRef.current.focus();
+            customerSearchRef.current.select();
+            return;
+          }
         }
       }
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
         event.preventDefault();
         if (!event.repeat) checkoutRef.current();
-      } else if (event.key === "F2" || (event.key === "Tab" && (document.activeElement === document.body || document.activeElement?.tagName === "H1"))) {
+      } else if (event.key === "F2") {
         event.preventDefault();
         searchRef.current?.focus();
         searchRef.current?.select();
@@ -257,7 +260,8 @@ export function CashierClient({
     setSearch("");
     setHighlightedProduct(0);
     setProductKeyboardSelection(false);
-    requestAnimationFrame(() => focusField(quantityRefs.current[product.id]));
+    setShowProductDropdown(false);
+    requestAnimationFrame(() => focusField(priceRefs.current[product.id]));
   }
   const cartSectionRef = useRef<HTMLDivElement>(null);
 
@@ -1203,7 +1207,7 @@ export function CashierClient({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* ── Feedback banner ─────────────────────────────────────────── */}
       {feedback && (
         <div className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium ${
@@ -1424,254 +1428,238 @@ export function CashierClient({
       {/* ══════════════ POS TAB ════════════════════════════════════ */}
       {mode === "pos" && (
       <>
-      {/* Mobile-only sticky cart summary — confirms items were added and jumps to the cart */}
-      {cart.length > 0 && (
-        <button
-          type="button"
-          onClick={() => cartSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-          className="xl:hidden sticky top-0 z-20 flex w-full items-center justify-between gap-3 rounded-xl bg-emerald-600 px-4 py-3 text-white shadow-md shadow-emerald-600/20"
-        >
-          <span className="flex items-center gap-2 text-sm font-semibold">
-            <ShoppingCart className="h-4 w-4 shrink-0" />
-            {cart.length}{" "}
-            {cart.length === 1
-              ? language === "ur" ? "آئٹم" : "item"
-              : language === "ur" ? "آئٹمز" : "items"}
-            {" · "}
-            {formatMoney(subtotal)}
-          </span>
-          <span className="flex shrink-0 items-center gap-1 text-xs font-bold">
-            {language === "ur" ? "کارٹ دیکھیں" : "View cart"}
-            <ArrowDown className="h-4 w-4" />
-          </span>
-        </button>
-      )}
-      <fieldset disabled={isPending} className="min-w-0 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-            {/* ── Customer Selector ─────────────────────────────────── */}
-            <div className="xl:col-span-2 space-y-2 rounded-xl border border-zinc-200/70 dark:border-zinc-700/60 bg-zinc-50/60 dark:bg-zinc-800/30 p-3">
-              <p className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                <User className="h-3.5 w-3.5" />
-                {labels.customerLabel}
-              </p>
-              {selectedCustomer && !editingCustomer ? (
-                <div className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{selectedCustomer.code} · {selectedCustomer.name}</p>
-                    {selectedCustomer.phone && (
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">{selectedCustomer.phone}</p>
+      <fieldset disabled={isPending} className="min-w-0 grid gap-4 xl:gap-6 items-start">
+        {/* ── Customer & Product Picker ─────────────────────────────── */}
+        <div className="min-w-0 grid gap-2.5 md:grid-cols-2 items-start">
+          {/* ── Customer Selector ─────────────────────────────────── */}
+          <div className="h-[84px] space-y-1 rounded-xl border border-zinc-200/70 dark:border-zinc-700/60 bg-zinc-50/60 dark:bg-zinc-800/30 p-2">
+            <p className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+              <User className="h-3.5 w-3.5" />
+              {labels.customerLabel}
+            </p>
+            {selectedCustomer && !editingCustomer ? (
+              <div className="flex min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{selectedCustomer.code} · {selectedCustomer.name}</p>
+                  {selectedCustomer.phone && (
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{selectedCustomer.phone}</p>
+                  )}
+                </div>
+                <div className="ml-auto text-right text-sm" aria-live="polite"><span className="text-zinc-500">{language === "ur" ? "بقایا" : "Balance"}</span><p className="font-semibold">{formatMoney(selectedCustomer.balance)}</p></div>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedCustomer(null); setCustomerSearch(""); }}
+                  className="flex-shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                  aria-label={labels.clearCustomer}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div
+                className="relative"
+                onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setShowCustomerDropdown(false);
+                  }
+                }}
+              >
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                  <Input
+                    ref={customerSearchRef}
+                    aria-label="Search customers"
+                    role="combobox"
+                    aria-expanded={showCustomerDropdown}
+                    aria-controls="customer-results"
+                    aria-activedescendant={showCustomerDropdown ? `customer-option-${highlightedCustomer}` : undefined}
+                    value={customerSearch}
+                    onChange={(e) => { setCustomerSearch(e.target.value); setHighlightedCustomer(0); setShowCustomerDropdown(true); }}
+                    onFocus={() => setShowCustomerDropdown(true)}
+                    onKeyDown={event => {
+                      if (event.nativeEvent.isComposing || event.ctrlKey || event.metaKey) return;
+                      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                        event.preventDefault();
+                        const next = Math.max(-1, Math.min(filteredCustomers.length - 1, highlightedCustomer + (event.key === "ArrowDown" ? 1 : -1)));
+                        setHighlightedCustomer(next);
+                        document.getElementById(`customer-option-${next}`)?.scrollIntoView({ block: "nearest" });
+                      } else if (event.key === "Enter") {
+                        event.preventDefault();
+                        if (highlightedCustomer === -1) chooseCustomer(null);
+                        else if (filteredCustomers[highlightedCustomer]) chooseCustomer(filteredCustomers[highlightedCustomer]);
+                      } else if (event.key === "Escape") {
+                        event.preventDefault();
+                        setEditingCustomer(false);
+                        setShowCustomerDropdown(false);
+                        focusField(searchRef.current);
+                      } else if (event.key === "Tab" && !event.shiftKey) {
+                        event.preventDefault();
+                        setShowCustomerDropdown(false);
+                        focusField(searchRef.current);
+                      }
+                    }}
+                    placeholder={labels.customerSearchPlaceholder}
+                    className="pl-9 h-8 text-sm"
+                  />
+                </div>
+                {showCustomerDropdown && (
+                  <div id="customer-results" role="listbox" aria-label="Customers" className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    <div aria-hidden="true" className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)] gap-3 px-3 py-2 text-xs font-semibold text-zinc-500"><span>Code / Customer</span><span>Address</span><span>Contact number</span></div>
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      id="customer-option--1" role="option" aria-selected={highlightedCustomer === -1}
+                      onClick={() => chooseCustomer(null)}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800"
+                    >
+                      {labels.walkIn}
+                    </button>
+                    {filteredCustomers.length === 0 ? (
+                      <p className="px-3 py-3 text-sm text-zinc-400 dark:text-zinc-500 text-center">{labels.noCustomersFound}</p>
+                    ) : (
+                      filteredCustomers.map((c, index) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          tabIndex={-1}
+                          id={`customer-option-${index}`} role="option" aria-selected={highlightedCustomer === index}
+                          onClick={() => chooseCustomer(c)}
+                          className={`w-full grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)] items-center gap-3 px-3 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 last:border-0 text-left ${highlightedCustomer === index ? "bg-zinc-100 dark:bg-zinc-800" : ""}`}
+                        >
+                          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{c.code} · {c.name}</span>
+                          <span className="text-xs text-zinc-500 break-words">{c.address || "—"}</span>
+                          <span className="text-xs text-zinc-500 break-words">{c.phone || "—"}</span>
+                        </button>
+                      ))
                     )}
                   </div>
-                  <div className="ml-auto text-right text-sm" aria-live="polite"><span className="text-zinc-500">{language === "ur" ? "بقایا" : "Balance"}</span><p className="font-semibold">{formatMoney(selectedCustomer.balance)}</p></div>
-                  <button
-                    type="button"
-                    onClick={() => { setSelectedCustomer(null); setCustomerSearch(""); }}
-                    className="flex-shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
-                    aria-label={labels.clearCustomer}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <div
-                  className="relative"
-                  onBlur={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                      setShowCustomerDropdown(false);
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ── Product Picker ────────────────────────────────────────── */}
+          <div
+            className="relative h-[84px] rounded-xl border border-zinc-200/70 dark:border-zinc-700/60 bg-zinc-50/60 dark:bg-zinc-800/30 p-2"
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setShowProductDropdown(false);
+              }
+            }}
+          >
+            <div className="space-y-1 shrink-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{labels.pickerTitle}</span>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                <Input
+                  ref={searchRef}
+                  role="combobox"
+                  aria-label="Search products"
+                  aria-autocomplete="list"
+                  aria-expanded={showProductDropdown}
+                  aria-controls="product-results"
+                  aria-activedescendant={filteredProducts[highlightedProduct] ? `product-option-${highlightedProduct}` : undefined}
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setHighlightedProduct(0); setProductKeyboardSelection(false); setShowProductDropdown(true); }}
+                  onFocus={() => setShowProductDropdown(true)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Tab" && event.shiftKey) {
+                      event.preventDefault();
+                      if (customerSearchRef.current) {
+                        focusField(customerSearchRef.current);
+                      }
+                      return;
                     }
+                    handleQuickAddFromSearch(event);
                   }}
-                >
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
-                    <Input
-                      ref={customerSearchRef}
-                      aria-label="Search customers"
-                      role="combobox"
-                      aria-expanded={showCustomerDropdown}
-                      aria-controls="customer-results"
-                      aria-activedescendant={showCustomerDropdown ? `customer-option-${highlightedCustomer}` : undefined}
-                      value={customerSearch}
-                      onChange={(e) => { setCustomerSearch(e.target.value); setHighlightedCustomer(0); setShowCustomerDropdown(true); }}
-                      onFocus={() => setShowCustomerDropdown(true)}
-                      onKeyDown={event => {
-                        if (event.nativeEvent.isComposing || event.ctrlKey || event.metaKey) return;
-                        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-                          event.preventDefault();
-                          const next = Math.max(-1, Math.min(filteredCustomers.length - 1, highlightedCustomer + (event.key === "ArrowDown" ? 1 : -1)));
-                          setHighlightedCustomer(next);
-                          document.getElementById(`customer-option-${next}`)?.scrollIntoView({ block: "nearest" });
-                        } else if (event.key === "Enter") {
-                          event.preventDefault();
-                          if (highlightedCustomer === -1) chooseCustomer(null);
-                          else if (filteredCustomers[highlightedCustomer]) chooseCustomer(filteredCustomers[highlightedCustomer]);
-                        } else if (event.key === "Escape") {
-                          event.preventDefault();
-                          setEditingCustomer(false);
-                          setShowCustomerDropdown(false);
-                          focusField(searchRef.current);
-                        }
-                      }}
-                      placeholder={labels.customerSearchPlaceholder}
-                      className="pl-9 h-8 text-sm"
-                    />
-                  </div>
-                  {showCustomerDropdown && (
-                    <div id="customer-results" role="listbox" aria-label="Customers" className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                      <div aria-hidden="true" className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)] gap-3 px-3 py-2 text-xs font-semibold text-zinc-500"><span>Code / Customer</span><span>Address</span><span>Contact number</span></div>
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        id="customer-option--1" role="option" aria-selected={highlightedCustomer === -1}
-                        onClick={() => chooseCustomer(null)}
-                        className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800"
-                      >
-                        {labels.walkIn}
-                      </button>
-                      {filteredCustomers.length === 0 ? (
-                        <p className="px-3 py-3 text-sm text-zinc-400 dark:text-zinc-500 text-center">{labels.noCustomersFound}</p>
-                      ) : (
-                        filteredCustomers.map((c, index) => (
-                          <button
-                            key={c.id}
-                            type="button"
-                            tabIndex={-1}
-                            id={`customer-option-${index}`} role="option" aria-selected={highlightedCustomer === index}
-                            onClick={() => chooseCustomer(c)}
-                            className={`w-full grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)] items-center gap-3 px-3 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 last:border-0 text-left ${highlightedCustomer === index ? "bg-zinc-100 dark:bg-zinc-800" : ""}`}
-                          >
-                            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{c.code} · {c.name}</span>
-                            <span className="text-xs text-zinc-500 break-words">{c.address || "—"}</span>
-                            <span className="text-xs text-zinc-500 break-words">{c.phone || "—"}</span>
+                  placeholder={labels.searchPlaceholder}
+                  className="pl-9 rounded-xl border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 h-8 text-sm"
+                />
+              </div>
+            </div>
+            {showProductDropdown && (
+            <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[420px] overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white p-2.5 shadow-lg dark:bg-zinc-900">
+              {filteredProducts.length === 0 ? (
+                <p className="text-sm text-zinc-400 dark:text-zinc-500 text-center py-6">{language === "ur" ? "اس تلاش سے کوئی پروڈکٹ نہیں ملی۔" : "No products matched this search."}</p>
+              ) : (
+                <div id="product-results" role="listbox" aria-label="Products" className="space-y-1.5 max-h-[395px] overflow-y-auto pr-1.5 custom-scrollbar [scrollbar-gutter:stable]">
+                  {filteredProducts.map((product, index) => {
+                    const isOut = product.currentStock <= 0;
+                    return (
+                      <div key={product.id} id={`product-option-${index}`} role="option" aria-selected={index === highlightedProduct} className={`${productKeyboardSelection && index === highlightedProduct ? "ring-1 ring-zinc-400 dark:ring-zinc-500 " : ""}flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${isOut ? "border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 opacity-60" : "border-zinc-200/70 dark:border-zinc-700/60 bg-white dark:bg-zinc-900/60 hover:border-emerald-200 dark:hover:border-emerald-800/50 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/10"}`}>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">{withUrduMeaning(product.name, language)}</p>
+                          <p className="truncate text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                            <span className="font-mono">{product.sku}</span> · {withUrduMeaning(product.category, language)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{formatMoney(product.sellingPrice)}</p>
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${isOut ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"}`}>
+                              {labels.stock}: {product.currentStock}
+                            </span>
+                          </div>
+                          <button type="button" onClick={() => selectProduct(product)} disabled={isOut} className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40 ${isOut ? "bg-zinc-100 text-zinc-400" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"}`}>
+                            {isOut ? labels.outOfStock : labels.add}
                           </button>
-                        ))
-                      )}
-                    </div>
-                  )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
-
-        {/* ── Product Picker ────────────────────────────────────────── */}
-        <div className="rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/40 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{labels.pickerTitle}</span>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 pointer-events-none" />
-              <Input ref={searchRef} role="combobox" aria-label="Search products" aria-autocomplete="list" aria-expanded={filteredProducts.length > 0} aria-controls="product-results" aria-activedescendant={filteredProducts[highlightedProduct] ? `product-option-${highlightedProduct}` : undefined} value={search} onChange={(e) => { setSearch(e.target.value); setHighlightedProduct(0); setProductKeyboardSelection(false); }} onKeyDown={handleQuickAddFromSearch} placeholder={labels.searchPlaceholder} className="pl-9 rounded-xl border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 h-9 text-sm" />
-            </div>
-          </div>
-          <div className="p-4">
-            {filteredProducts.length === 0 ? (
-              <p className="text-sm text-zinc-400 dark:text-zinc-500 text-center py-8">{language === "ur" ? "اس تلاش سے کوئی پروڈکٹ نہیں ملی۔" : "No products matched this search."}</p>
-            ) : (
-              <div id="product-results" role="listbox" aria-label="Products" className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
-                {filteredProducts.map((product, index) => {
-                  const isOut = product.currentStock <= 0;
-                  return (
-                    <div key={product.id} id={`product-option-${index}`} role="option" aria-selected={index === highlightedProduct} className={`${productKeyboardSelection && index === highlightedProduct ? "ring-1 ring-zinc-400 dark:ring-zinc-500 " : ""}flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3 transition-colors ${isOut ? "border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 opacity-60" : "border-zinc-200/70 dark:border-zinc-700/60 bg-white dark:bg-zinc-900/60 hover:border-emerald-200 dark:hover:border-emerald-800/50 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/10"}`}>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">{withUrduMeaning(product.name, language)}</p>
-                        <p className="truncate text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                          <span className="font-mono">{product.sku}</span> · {withUrduMeaning(product.category, language)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2.5 shrink-0">
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{formatMoney(product.sellingPrice)}</p>
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${isOut ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"}`}>
-                            {labels.stock}: {product.currentStock}
-                          </span>
-                        </div>
-                        <button type="button" onClick={() => selectProduct(product)} disabled={isOut} className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40 ${isOut ? "bg-zinc-100 text-zinc-400" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"}`}>
-                          {isOut ? labels.outOfStock : labels.add}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
             )}
           </div>
         </div>
 
-        {/* ── Cart ─────────────────────────────────────────────────── */}
+        {/* ── Full-width Sale Cart ──────────────────────────────────── */}
         <div ref={cartSectionRef} className="scroll-mt-20 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/40">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/40">
             <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{labels.cartTitle}</span>
             {cart.length > 0 && <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/40 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">{cart.length}</span>}
           </div>
-          <div className="p-3 space-y-3">
+          <div className="p-2.5 space-y-2.5">
             {cart.length === 0 ? (
               <p className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/30 p-4 text-sm text-zinc-500 dark:text-zinc-400 text-center">{labels.cartEmpty}</p>
             ) : (
-              <div className="space-y-2">
+              <div className="max-h-[calc(100vh-280px)] lg:max-h-[calc(100dvh-280px)] min-h-[120px] overflow-x-auto overflow-y-auto pr-1.5 custom-scrollbar">
+                <div className="min-w-[990px] space-y-1.5">
+                  <div className="grid grid-cols-[minmax(180px,1fr)_110px_110px_170px_105px_105px_110px_36px] items-center gap-2 px-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                    <span>Product</span>
+                    <span className="text-center">Previous</span>
+                    <span className="text-center">Price</span>
+                    <span className="text-center">Qty</span>
+                    <span className="text-center">Disc</span>
+                    <span className="text-center">Cost price</span>
+                    <span className="text-right">Total</span>
+                    <span />
+                  </div>
                 {cart.map((line) => {
-                  const lineStockUsed = toStockUnits(line.saleUnit, line.quantity);
-                  const lineRemaining = Math.max(0, line.maxStock - lineStockUsed);
                   const lineGross = toMoney(line.quantity * line.unitPrice);
                   const lineDiscountAmt = toMoney(lineGross * line.discountPct / 100);
                   const lineNet = toMoney(lineGross - lineDiscountAmt);
 
                   return (
-                    <div key={line.productId} className="space-y-2 rounded-xl border border-zinc-200/70 dark:border-zinc-700/60 bg-zinc-50/60 dark:bg-zinc-800/30 p-3">
-                      {/* Header: name + line total + remove */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
+                    <div key={line.productId} className="grid grid-cols-[minmax(180px,1fr)_110px_110px_170px_105px_105px_110px_36px] items-center gap-2 rounded-xl border border-zinc-200/70 dark:border-zinc-700/60 bg-zinc-50/60 dark:bg-zinc-800/30 p-2.5">
+                      <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
                             {withUrduMeaning(line.name, language)}
                           </p>
-                          <p className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">
-                            {line.sku} · {labels.stockUsed}: {lineStockUsed} · {labels.remainingAfterSale}: {lineRemaining}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1">
-                          <div className="text-right leading-tight">
-                            {line.discountPct > 0 && (
-                              <p className="text-[10px] text-zinc-400 line-through">{formatMoney(lineGross)}</p>
-                            )}
-                            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{formatMoney(lineNet)}</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeFromCart(line.productId)}
-                            aria-label={labels.remove}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/40 transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
                       </div>
 
-                      {/* Compact controls: qty stepper + unit + price + disc */}
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-[auto_minmax(80px,1fr)_100px] sm:items-center">
-                        <div className="flex items-center gap-1">
-                          <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => decrementQuantity(line.productId)}>
-                            <Minus className="h-3.5 w-3.5" />
-                          </Button>
-                          <Input
-                            type="text"
-                            ref={el => { quantityRefs.current[line.productId] = el; }}
-                            onFocus={event => event.currentTarget.select()}
-                            inputMode={line.saleUnit === "KG" ? "decimal" : "numeric"}
-                            value={getQuantityInputValue(line)}
-                            onChange={(event) => updateQuantityDraft(line.productId, event.target.value)}
-                            onBlur={() => commitQuantityDraft(line.productId)}
-                            onKeyDown={(event) => {
-                              if (event.ctrlKey || event.metaKey) return;
-                              if (event.key === "Tab" || event.key === "Enter") {
-                                event.preventDefault();
-                                focusField(event.shiftKey ? searchRef.current : priceRefs.current[line.productId]);
-                              }
-                            }}
-                            className="h-8 w-12 px-1 text-center"
-                            aria-label={labels.qty}
-                          />
-                          <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => incrementQuantity(line.productId)}>
-                            <Plus className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                      <Input
+                        readOnly
+                        value={selectedCustomer && line.productId in previousPrices ? formatMoney(previousPrices[line.productId]) : "—"}
+                        className="h-8 w-full bg-zinc-100 px-2 text-center text-xs text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                        aria-label={labels.previousPrice}
+                        title={labels.previousPrice}
+                      />
 
+                      <div className="flex min-w-0 flex-col gap-1">
                         <Input
                           type="number"
                           min="0"
@@ -1682,77 +1670,92 @@ export function CashierClient({
                             if (event.ctrlKey || event.metaKey) return;
                             if (event.key === "Tab" || event.key === "Enter") {
                               event.preventDefault();
-                              focusField(event.shiftKey ? quantityRefs.current[line.productId] : discountRefs.current[line.productId]);
+                              focusField(event.shiftKey ? searchRef.current : quantityRefs.current[line.productId]);
                             }
                           }}
                           value={line.unitPrice}
                           onChange={(event) => updateUnitPrice(line.productId, event.target.value)}
-                          className="h-8"
+                          className="h-8 w-full px-2 text-center text-sm"
                           aria-label={labels.unitPrice}
                           title={labels.unitPrice}
                         />
+                      </div>
 
+                      <div className="flex items-center justify-center gap-1">
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onMouseDown={(event) => event.preventDefault()} onClick={() => decrementQuantity(line.productId)} aria-label="Decrease quantity">
+                          <Minus className="h-3.5 w-3.5" />
+                        </Button>
                         <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="1"
-                          ref={el => { discountRefs.current[line.productId] = el; }}
+                          type="text"
+                          ref={el => { quantityRefs.current[line.productId] = el; }}
                           onFocus={event => event.currentTarget.select()}
-                          onKeyDown={event => {
+                          inputMode={line.saleUnit === "KG" ? "decimal" : "numeric"}
+                          value={getQuantityInputValue(line)}
+                          onChange={(event) => updateQuantityDraft(line.productId, event.target.value)}
+                          onBlur={() => commitQuantityDraft(line.productId)}
+                          onKeyDown={(event) => {
                             if (event.ctrlKey || event.metaKey) return;
                             if (event.key === "Tab" || event.key === "Enter") {
                               event.preventDefault();
-                              focusField(event.shiftKey ? priceRefs.current[line.productId] : searchRef.current);
+                              focusField(event.shiftKey ? priceRefs.current[line.productId] : discountRefs.current[line.productId]);
                             }
                           }}
-                          value={line.discountPct > 0 ? line.discountPct : ""}
-                          placeholder={labels.discount}
-                          onChange={(event) => updateDiscountPct(line.productId, event.target.value)}
-                          className="h-8 min-w-[100px] px-2 text-center"
-                          aria-label={labels.discount}
-                          title={labels.discount}
+                          className="h-8 w-12 px-1 text-center text-sm"
+                          aria-label={labels.qty}
                         />
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onMouseDown={(event) => event.preventDefault()} onClick={() => incrementQuantity(line.productId)} aria-label="Increase quantity">
+                          <Plus className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
 
-                      {/* Previous price indicator */}
-                      {selectedCustomer && (
-                        <div className="flex items-center gap-2 pt-1">
-                          {previousPricesLoading ? (
-                            <span className="text-[11px] text-zinc-400 dark:text-zinc-500 flex items-center gap-1">
-                              <Clock className="h-3 w-3 animate-spin" />
-                              {labels.loadingPreviousPrice}
-                            </span>
-                          ) : line.productId in previousPrices ? (
-                            <>
-                              <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">
-                                {labels.previousPrice}: {formatMoney(previousPrices[line.productId])}
-                              </span>
-                              {previousPrices[line.productId] !== line.unitPrice && (
-                                <button
-                                  type="button"
-                                  onClick={() => applyPreviousPrice(line.productId)}
-                                  className="text-[11px] text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline underline-offset-2 transition-colors"
-                                >
-                                  {labels.usePreviousPrice}
-                                </button>
-                              )}
-                            </>
-                          ) : (
-                            <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                              {labels.noPreviousPrice}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        ref={el => { discountRefs.current[line.productId] = el; }}
+                        onFocus={event => event.currentTarget.select()}
+                        onKeyDown={(event) => {
+                          if (event.ctrlKey || event.metaKey) return;
+                          if (event.key === "Tab" || event.key === "Enter") {
+                            event.preventDefault();
+                            focusField(event.shiftKey ? quantityRefs.current[line.productId] : searchRef.current);
+                          }
+                        }}
+                        value={line.discountPct > 0 ? line.discountPct : ""}
+                        placeholder={labels.discount}
+                        onChange={(event) => updateDiscountPct(line.productId, event.target.value)}
+                        className="h-8 w-full px-2 text-center text-sm"
+                        aria-label={labels.discount}
+                        title={labels.discount}
+                      />
+
+                      <span className="text-center text-sm text-zinc-500 dark:text-zinc-400">{formatMoney(line.costPrice)}</span>
+
+                      <div className="text-right leading-tight">
+                        {line.discountPct > 0 && (
+                          <p className="text-[10px] text-zinc-400 line-through">{formatMoney(lineGross)}</p>
+                        )}
+                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{formatMoney(lineNet)}</p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeFromCart(line.productId)}
+                        aria-label={labels.remove}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/40 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   );
                 })}
+                </div>
               </div>
             )}
 
             {/* ── Totals ───────────────────────────────────────────── */}
-            <div className="space-y-2.5 rounded-xl border border-zinc-200/70 dark:border-zinc-700/60 bg-zinc-50/60 dark:bg-zinc-800/30 p-3">
+            <div className="space-y-1.5 rounded-xl border border-zinc-200/70 dark:border-zinc-700/60 bg-zinc-50/60 dark:bg-zinc-800/30 p-2.5">
               {totalDiscount > 0 && (
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-zinc-500 dark:text-zinc-400">{labels.grossTotal}</span>
@@ -1773,7 +1776,7 @@ export function CashierClient({
               </div>
 
               {isAdmin && cart.length > 0 && (
-                <div className="flex items-center justify-between text-sm pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-700">
+                <div className="flex items-center justify-between text-sm pt-2.5 mt-2.5 border-t border-dashed border-zinc-200 dark:border-zinc-700">
                   <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
                     <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                     {labels.estimatedProfit}
@@ -1794,13 +1797,13 @@ export function CashierClient({
             </div>
 
             {!canCheckout && (
-              <p className="rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-300">
+              <p className="rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 text-xs text-amber-800 dark:text-amber-300">
                 {labels.noCheckoutPermission}
               </p>
             )}
 
             {!isOnline && (
-              <div className="flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 px-3 py-2 text-xs text-zinc-600 dark:text-zinc-400">
+              <div className="flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 px-3 py-1.5 text-xs text-zinc-600 dark:text-zinc-400">
                 <WifiOff className="h-3.5 w-3.5 shrink-0" />
                 {language === "ur"
                   ? "آف لائن موڈ — سیل لوکل محفوظ ہو گی اور آن لائن آنے پر sync ہو گی۔"
@@ -1810,7 +1813,7 @@ export function CashierClient({
 
             <Button
               type="button"
-              className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm shadow-emerald-200/50 dark:shadow-none"
+              className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-9 text-sm shadow-sm shadow-emerald-200/50 dark:shadow-none"
               disabled={cart.length === 0 || !canCheckout || isPending}
               onClick={handleCheckout}
             >

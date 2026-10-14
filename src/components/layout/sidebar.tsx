@@ -76,22 +76,22 @@ export function Sidebar({
 
   const navLinkClass = (href: string) =>
     cn(
-      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 select-none",
+      "flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-all duration-150 select-none",
       isActive(href)
         ? "accent-bg dark:accent-bg-dark accent-text dark:accent-text-dark scale-[0.98]"
         : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.97] active:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 dark:active:bg-zinc-700"
     );
 
   const iconClass = (href: string) =>
-    cn("h-5 w-5", isActive(href) ? "accent-icon" : "text-zinc-400");
+    cn("h-4 w-4 shrink-0", isActive(href) ? "accent-icon" : "text-zinc-400");
 
   const handleNav = () => { onClose?.(); };
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+    <aside className="flex h-full w-[185px] flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
       {/* Brand / Org header */}
-      <div className="flex h-16 items-center gap-2.5 border-b border-zinc-200 px-4 dark:border-zinc-800">
-        <LuminaLogomark size={32} />
+      <div className="flex h-16 items-center gap-2 border-b border-zinc-200 px-3 dark:border-zinc-800">
+        <LuminaLogomark size={28} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
             Lumina Stock
@@ -99,7 +99,7 @@ export function Sidebar({
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto space-y-0.5 px-3 py-4">
+      <nav className="flex-1 overflow-y-auto space-y-0.5 px-2 py-3 custom-scrollbar">
         {navigation.map((item) => {
           if (item.permissionKey && pagePermissions && !pagePermissions[item.permissionKey]) {
             return null;

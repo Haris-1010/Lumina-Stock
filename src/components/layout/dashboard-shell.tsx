@@ -90,16 +90,25 @@ export function DashboardShell({
 
       {/* ── Main content ──────────────────────────────────────────────────── */}
       <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
-        <div className="flex-shrink-0">
-          <Header
-            userName={userName}
-            initialNotifications={initialNotifications}
-            initialUnreadCount={initialUnreadCount}
-            onMenuClick={() => setSidebarOpen(true)}
-          />
-          <OfflineBanner />
-        </div>
-        <main className="flex-1 overflow-y-auto bg-zinc-50 p-4 pb-24 sm:p-6 md:pb-6 text-zinc-900 dark:bg-zinc-900/50 dark:text-zinc-100">
+        {pathname !== "/cashier" && (
+          <div className="flex-shrink-0">
+            <Header
+              userName={userName}
+              initialNotifications={initialNotifications}
+              initialUnreadCount={initialUnreadCount}
+              onMenuClick={() => setSidebarOpen(true)}
+            />
+            <OfflineBanner />
+          </div>
+        )}
+        <main
+          className={cn(
+            "flex-1 overflow-y-auto bg-zinc-50 text-zinc-900 dark:bg-zinc-900/50 dark:text-zinc-100",
+            pathname === "/cashier"
+              ? "p-3 sm:p-4 pb-20 md:pb-4"
+              : "p-4 pb-24 sm:p-6 md:pb-6"
+          )}
+        >
           {children}
         </main>
       </div>

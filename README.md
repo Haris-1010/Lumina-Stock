@@ -13,7 +13,7 @@ npm install
 2. Configure environment variables in `.env`:
 
 ```bash
-DATABASE_URL="postgresql://admin@localhost:5433/lumina_stock?schema=public"
+DATABASE_URL="postgresql://admin:admin@127.0.0.1:5434/lumina_stock?schema=public"
 AUTH_SECRET="replace-with-a-long-random-secret"
 
 # Stripe billing (optional until you enable checkout)
@@ -40,7 +40,7 @@ GROQ_MODEL="llama-3.3-70b-versatile"
 GROQ_BASE_URL="https://api.groq.com/openai/v1"
 ```
 
-3. Start the bundled local PostgreSQL cluster (required for `localhost:5433` setups):
+3. Start the bundled local PostgreSQL cluster (required for `127.0.0.1:5434` setups):
 
 ```bash
 npm run db:start-local

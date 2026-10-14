@@ -3,7 +3,7 @@ generator client {
   // "native" resolves at runtime: macOS/Windows in dev, Linux on Vercel.
   // "rhel-openssl-3.0.x" is the Vercel Lambda runtime target.
   // The windows + linux-musl targets were redundant and inflated cold-start size.
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "windows"]
 }
 
 datasource db {
