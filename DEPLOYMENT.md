@@ -86,6 +86,9 @@ Vercel Functions run in `iad1` by default. This project uses Supabase in Mumbai
 (`ap-south-1`), so `vercel.json` sets the function region to Mumbai (`bom1`).
 If the Function Regions control is unavailable in the Vercel dashboard, keep
 this setting in `vercel.json` and redeploy after pushing the change.
+After connecting or reconnecting the Git repository in Vercel, push a new commit
+to `main` to trigger a production deployment; reconnecting does not deploy
+commits that were pushed before the connection was active.
 
 ---
 
