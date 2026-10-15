@@ -80,6 +80,13 @@ Under **Environment Variables**, add the following:
 ### Step 2.4: Deploy
 Click **Deploy**. Vercel will run `prisma generate && next build` and deploy your application live!
 
+### Function region
+
+Vercel Functions run in `iad1` by default. This project uses Supabase in Mumbai
+(`ap-south-1`), so `vercel.json` sets the function region to Mumbai (`bom1`).
+If the Function Regions control is unavailable in the Vercel dashboard, keep
+this setting in `vercel.json` and redeploy after pushing the change.
+
 ---
 
 ## 3. Branch & Update Strategy

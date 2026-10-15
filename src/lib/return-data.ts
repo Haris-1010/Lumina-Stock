@@ -2,9 +2,13 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { legacyReturn, parseReturnNote } from "@/lib/returns-ledger";
 
-export async function getReturnLedger(organizationId: string, client: Prisma.TransactionClient = db) {
+export async function getReturnLedger(
+  organizationId: string,
+  client: Prisma.TransactionClient = db,
+  createdAt?: Pick<Prisma.DateTimeFilter, "gte" | "lte">
+) {
   const logs = await client.inventoryLog.findMany({
-    where: { organizationId, changeType: "RETURN" },
+    where: { organizationId, changeType: "RETURN", ...(createdAt ? { createdAt } : {}) },
     select: { id: true, note: true, quantity: true, createdAt: true, productId: true },
     orderBy: { createdAt: "asc" },
   });

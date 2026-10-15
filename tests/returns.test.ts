@@ -2,10 +2,33 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { allocateReturn, legacyReturn, money, parseReturnNote, returnStockDelta, saleLineAmounts, type ReturnRecord, type ReturnableOrder } from "../src/lib/returns-ledger";
 import { recordReturn } from "../src/lib/record-return";
+import { getReturnLedger } from "../src/lib/return-data";
 import type { Prisma } from "@prisma/client";
 
 const order: ReturnableOrder = { id: "sale", orderNumber: "BILL-1", totalAmount: 90, items: [{ id: "line", productId: "product", quantity: 1, price: 100, metadata: { discountPct: 10 } }] };
 const record = (allocations: ReturnRecord["allocations"]): ReturnRecord => ({ version: 1, returnType: "CUSTOMER_RETURN", condition: "RESALEABLE", referenceNumber: "BILL-1", note: "", salesOrderId: "sale", stockDelta: 1, allocations, refundAmount: money(allocations.reduce((n, a) => n + a.amount, 0)) });
+
+test("return ledger applies an optional date range in the database query", async () => {
+  const start = new Date("2026-10-01T00:00:00Z");
+  const end = new Date("2026-10-31T23:59:59Z");
+  let query: unknown;
+  const client = {
+    inventoryLog: {
+      findMany: async ({ where }: { where: unknown }) => {
+        query = where;
+        return [];
+      },
+    },
+  } as unknown as Prisma.TransactionClient;
+
+  await getReturnLedger("org", client, { gte: start, lte: end });
+
+  assert.deepEqual(query, {
+    organizationId: "org",
+    changeType: "RETURN",
+    createdAt: { gte: start, lte: end },
+  });
+});
 
 test("sale followed by full return nets zero at discounted receipt price", () => {
   const allocations = allocateReturn(order, "product", 1, []);
